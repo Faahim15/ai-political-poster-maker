@@ -42,13 +42,19 @@ app's origin (`http://localhost:3000` by default).
 
 - Auth, templates, upload, and poster endpoints match the Express routes in
   `routes.ts` exactly (`/auth`, `/templates`, `/upload`, `/posters`).
-- `/api/templates` currently projects only `_id, title, occasionType,
-thumbnailUrl` (see `template.controller.ts`). The frontend's `Template` type
-  also has an optional `layoutConfig` (colors + `photoSlots`) — if that
-  projection is extended to include it, `PosterPreview` and `PhotoUploader`
-  will automatically use the template's real palette and photo-slot limit
-  instead of the current default (flag green/red, 3 slots) with no frontend
-  changes needed.
+- `/api/templates` now sends `layoutConfig` (colors + `photoSlots`) alongside
+  the basic fields. `PosterPreview` and `PhotoUploader` use it automatically
+  when present, falling back to a default palette and 3 slots otherwise.
+- Some templates are **fixed-illustration** templates — they carry a
+  `backgroundImageUrl` and `textLayout` (percent-based positions for
+  headline/sub/name/photo) instead of a plain color gradient. The frontend
+  doesn't need to know the difference: it just renders whatever `Template`
+  it receives, and the backend's renderer picks the right pipeline.
+- On every generation, the backend also asks Gemini to suggest a focal point
+  for each uploaded photo (e.g. where a face sits), so photos aren't
+  center-cropped blindly inside their frame. This happens server-side only —
+  the frontend's live preview always shows a plain center-cropped photo, since
+  the real focal point isn't known until generation actually runs.
 - Regenerating a poster only resends `formData` (`poster.controller.ts`), so
   the original photos can't be swapped afterwards — the create page locks the
   photo uploader once a poster exists, to match that behavior.
