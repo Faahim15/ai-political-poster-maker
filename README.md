@@ -1,5 +1,7 @@
 # পোস্টার ঘর — Frontend (Next.js + TypeScript + Tailwind v4)
 
+**Live:** https://ai-political-poster-maker-five.vercel.app
+
 ## Run
 
     cp .env.example .env.local     # point this at the Express backend
@@ -41,7 +43,7 @@ app's origin (`http://localhost:3000` by default).
 - Auth, templates, upload, and poster endpoints match the Express routes in
   `routes.ts` exactly (`/auth`, `/templates`, `/upload`, `/posters`).
 - `/api/templates` currently projects only `_id, title, occasionType,
-  thumbnailUrl` (see `template.controller.ts`). The frontend's `Template` type
+thumbnailUrl` (see `template.controller.ts`). The frontend's `Template` type
   also has an optional `layoutConfig` (colors + `photoSlots`) — if that
   projection is extended to include it, `PosterPreview` and `PhotoUploader`
   will automatically use the template's real palette and photo-slot limit
