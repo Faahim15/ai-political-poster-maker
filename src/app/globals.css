@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #10231b;
+  --color-paper: #f6f8f4;
+  --color-line: #dbe3dc;
+  --color-flag: #006a4e;
+  --color-flag-dark: #004d39;
+  --color-sun: #e8383d;
+  --font-sans: var(--font-ui), system-ui, sans-serif;
+  --font-display: var(--font-serif), serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+}
+
+@layer components {
+  .field {
+    @apply w-full rounded-lg border border-line bg-white px-3 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-flag;
+  }
+  .card {
+    @apply rounded-lg bg-white ring-1 ring-line;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-flag px-5 py-2.5 font-semibold text-white transition hover:bg-flag-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flag;
+  }
+}
+
+/* Hero entrance — staggered so headline, paragraph, and CTA rise in sequence. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise-in {
+  animation: rise-in 0.5s ease-out both;
+}
+.animate-rise-in-1 {
+  animation: rise-in 0.5s ease-out 0.08s both;
+}
+.animate-rise-in-2 {
+  animation: rise-in 0.5s ease-out 0.18s both;
+}
+.animate-rise-in-3 {
+  animation: rise-in 0.5s ease-out 0.28s both;
+}
+
+/* Gentle continuous float for the hero poster preview. */
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.animate-float {
+  animation: float-slow 5s ease-in-out infinite;
+}
+
+/* Crossfade when the rotating sample preview switches templates. */
+@keyframes fade-swap {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-fade-swap {
+  animation: fade-swap 0.6s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
