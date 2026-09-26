@@ -97,7 +97,12 @@ import { useSearchParams } from "next/navigation";
 import { Download, Lock, RefreshCw, Sparkles } from "lucide-react";
 import { api, downloadImage } from "@/lib/api";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { OCCASIONS, type Poster, type PosterForm, type Template } from "@/types";
+import {
+  OCCASIONS,
+  type Poster,
+  type PosterForm,
+  type Template,
+} from "@/types";
 import PosterPreview from "@/components/PosterPreview";
 import PhotoUploader, { type Photo } from "@/components/PhotoUploader";
 import Button from "@/components/ui/Button";
@@ -114,9 +119,6 @@ const empty: PosterForm = {
   headline: "",
 };
 
-// The current /api/templates response doesn't include layoutConfig.photoSlots yet
-// (see template.controller.ts's .select(...)) — default to 3 and this will pick
-// up the real per-template limit automatically once that field is exposed.
 const DEFAULT_MAX_PHOTOS = 3;
 
 function Create() {
@@ -130,8 +132,10 @@ function Create() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const set = (k: keyof PosterForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set =
+    (k: keyof PosterForm) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   useEffect(() => {
     if (!templateId) return;
@@ -144,7 +148,6 @@ function Create() {
       .catch(() => setError("টেমপ্লেট লোড করা যায়নি।"));
   }, [templateId]);
 
-  // Poll while the backend's Gemini → Puppeteer → Cloudinary pipeline runs (poster.service.ts).
   const posterId = poster?._id;
   const status = poster?.status;
   useEffect(() => {
@@ -155,7 +158,8 @@ function Create() {
         setPoster(p);
         if (p.status !== "generating") {
           setBusy(false);
-          if (p.status === "failed") setError("পোস্টার তৈরি হয়নি। আবার চেষ্টা করুন।");
+          if (p.status === "failed")
+            setError("পোস্টার তৈরি হয়নি। আবার চেষ্টা করুন।");
         }
       } catch {
         // transient network hiccup — try again on the next tick
@@ -168,14 +172,19 @@ function Create() {
     e.preventDefault();
     setError("");
     if (!templateId) return setError("প্রথমে একটি টেমপ্লেট বেছে নিন।");
-    if (photos.some((p) => !p.url)) return setError("ছবি আপলোড শেষ হওয়া পর্যন্ত অপেক্ষা করুন।");
+    if (photos.some((p) => !p.url))
+      return setError("ছবি আপলোড শেষ হওয়া পর্যন্ত অপেক্ষা করুন।");
 
     setBusy(true);
     try {
       setPoster(
         poster
           ? await api.regenerate(poster._id, form)
-          : await api.createPoster({ templateId, formData: form, uploadedPhotoUrls: photos.map((p) => p.url!) }),
+          : await api.createPoster({
+              templateId,
+              formData: form,
+              uploadedPhotoUrls: photos.map((p) => p.url!),
+            }),
       );
     } catch (x) {
       setError((x as Error).message);
@@ -185,8 +194,6 @@ function Create() {
 
   const done = poster?.status === "completed" && poster.generatedImageUrl;
   const noRetries = poster?.retriesLeft === 0;
-  // Regenerate only re-sends formData (see poster.controller.ts), so the original
-  // photos can't change after the first generation — lock the uploader once it exists.
   const photosLocked = !!poster;
 
   return (
@@ -195,35 +202,88 @@ function Create() {
         <h1 className="font-display text-3xl font-bold">পোস্টারের তথ্য দিন</h1>
         {!templateId && (
           <ErrorBanner>
-            কোনো টেমপ্লেট বাছা হয়নি। <Link href="/" className="underline">টেমপ্লেট বেছে নিন</Link>
+            কোনো টেমপ্লেট বাছা হয়নি।{" "}
+            <Link href="/" className="underline">
+              টেমপ্লেট বেছে নিন
+            </Link>
           </ErrorBanner>
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="নাম" required>
-            {(id) => <input id={id} required className="field" value={form.name} onChange={set("name")} />}
+            {(id) => (
+              <input
+                id={id}
+                required
+                className="field"
+                value={form.name}
+                onChange={set("name")}
+              />
+            )}
           </Field>
           <Field label="পদবি" required hint="যেমন: সাধারণ সম্পাদক">
-            {(id) => <input id={id} required className="field" value={form.designation} onChange={set("designation")} />}
+            {(id) => (
+              <input
+                id={id}
+                required
+                className="field"
+                value={form.designation}
+                onChange={set("designation")}
+              />
+            )}
           </Field>
           <Field label="দল / সংগঠন" required>
-            {(id) => <input id={id} required className="field" value={form.party} onChange={set("party")} />}
+            {(id) => (
+              <input
+                id={id}
+                required
+                className="field"
+                value={form.party}
+                onChange={set("party")}
+              />
+            )}
           </Field>
           <Field label="ইউনিয়ন / থানা / জেলা">
-            {(id) => <input id={id} className="field" value={form.area} onChange={set("area")} />}
+            {(id) => (
+              <input
+                id={id}
+                className="field"
+                value={form.area}
+                onChange={set("area")}
+              />
+            )}
           </Field>
           <Field label="উপলক্ষ">
             {(id) => (
-              <select id={id} className="field" value={form.occasionType} onChange={set("occasionType")}>
+              <select
+                id={id}
+                className="field"
+                value={form.occasionType}
+                onChange={set("occasionType")}
+              >
                 {OCCASIONS.map((o) => (
-                  <option key={o.id} value={o.id}>{o.bn}</option>
+                  <option key={o.id} value={o.id}>
+                    {o.bn}
+                  </option>
                 ))}
               </select>
             )}
           </Field>
-          <Field label="শিরোনাম" required hint={`${form.headline.length}/40 অক্ষর`}>
+          <Field
+            label="শিরোনাম"
+            required
+            hint={`${form.headline.length}/40 অক্ষর`}
+          >
             {(id) => (
-              <input id={id} required maxLength={40} className="field" value={form.headline} onChange={set("headline")} placeholder="যেমন: মহান বিজয় দিবস" />
+              <input
+                id={id}
+                required
+                maxLength={40}
+                className="field"
+                value={form.headline}
+                onChange={set("headline")}
+                placeholder="যেমন: মহান বিজয় দিবস"
+              />
             )}
           </Field>
         </div>
@@ -231,7 +291,12 @@ function Create() {
         <fieldset>
           <legend className="mb-1 flex items-center gap-1.5 font-medium">
             ছবি
-            {photosLocked && <Lock className="size-3.5 text-ink/40" aria-label="regenerate করলে ছবি বদলানো যাবে না" />}
+            {photosLocked && (
+              <Lock
+                className="size-3.5 text-ink/40"
+                aria-label="regenerate করলে ছবি বদলানো যাবে না"
+              />
+            )}
           </legend>
           <PhotoUploader
             photos={photos}
@@ -241,7 +306,9 @@ function Create() {
             onError={setError}
           />
           {photosLocked && (
-            <p className="mt-1 text-xs text-ink/50">আবার তৈরি করলে এই ছবিগুলোই থাকবে, শুধু লেখা বদলাবে।</p>
+            <p className="mt-1 text-xs text-ink/50">
+              আবার তৈরি করলে এই ছবিগুলোই থাকবে, শুধু লেখা বদলাবে।
+            </p>
           )}
         </fieldset>
 
@@ -251,12 +318,18 @@ function Create() {
         </div>
 
         <Button loading={busy} disabled={noRetries}>
-          {poster ? <RefreshCw className="size-4" aria-hidden /> : <Sparkles className="size-4" aria-hidden />}
+          {poster ? (
+            <RefreshCw className="size-4" aria-hidden />
+          ) : (
+            <Sparkles className="size-4" aria-hidden />
+          )}
           {poster ? "আবার তৈরি করুন" : "পোস্টার তৈরি করুন"}
         </Button>
         {poster?.retriesLeft !== undefined && (
           <p className="text-sm text-ink/60">
-            {noRetries ? "আর নতুন করে তৈরি করার সুযোগ নেই।" : `আরও ${poster.retriesLeft} বার আবার তৈরি করতে পারবেন।`}
+            {noRetries
+              ? "আর নতুন করে তৈরি করার সুযোগ নেই।"
+              : `আরও ${poster.retriesLeft} বার আবার তৈরি করতে পারবেন।`}
           </p>
         )}
       </form>
@@ -265,16 +338,36 @@ function Create() {
         <div className="mx-auto max-w-sm">
           {done ? (
             <div className="relative aspect-3/4 w-full overflow-hidden shadow-2xl ring-1 ring-black/10">
-              <Image src={poster.generatedImageUrl!} alt="তৈরি পোস্টার" fill sizes="400px" className="object-cover" />
+              <Image
+                src={poster.generatedImageUrl!}
+                alt="তৈরি পোস্টার"
+                fill
+                sizes="400px"
+                className="object-cover"
+              />
             </div>
           ) : (
-            <PosterPreview form={form} photos={photos.map((p) => p.preview)} maxSlots={template?.layoutConfig?.photoSlots ?? DEFAULT_MAX_PHOTOS} />
+            <PosterPreview
+              form={form}
+              photos={photos.map((p) => p.preview)}
+              layoutConfig={template?.layoutConfig}
+            />
           )}
           <p className="mt-3 text-sm text-ink/60">
-            {done ? "আপনার পোস্টার প্রস্তুত, ১২০০×১৬০০ পিক্সেল রেজোলিউশনে।" : "এটি আনুমানিক প্রিভিউ। চূড়ান্ত পোস্টার ছাপার মাপে তৈরি হবে।"}
+            {done
+              ? "আপনার পোস্টার প্রস্তুত, ১২০০×১৬০০ পিক্সেল রেজোলিউশনে।"
+              : "এটি আনুমানিক প্রিভিউ। চূড়ান্ত পোস্টার ছাপার মাপে তৈরি হবে।"}
           </p>
           {done && (
-            <Button className="mt-3 w-full" onClick={() => downloadImage(poster.generatedImageUrl!, `poster-${poster._id}.png`)}>
+            <Button
+              className="mt-3 w-full"
+              onClick={() =>
+                downloadImage(
+                  poster.generatedImageUrl!,
+                  `poster-${poster._id}.png`,
+                )
+              }
+            >
               <Download className="size-4" aria-hidden /> PNG ডাউনলোড করুন
             </Button>
           )}
@@ -492,24 +585,69 @@ body {
   .card {
     @apply rounded-lg bg-white ring-1 ring-line;
   }
-  /* For link-styled CTAs (an <a>, not a <button>) — the ui/Button component
-     covers every actual <button> in the app. */
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-lg bg-flag px-5 py-2.5 font-semibold text-white transition hover:bg-flag-dark focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-flag;
   }
 }
 
-/* One deliberate entrance for the hero on first paint — not repeated per-section/card. */
+/* Hero entrance — staggered so headline, paragraph, and CTA rise in sequence. */
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .animate-rise-in {
   animation: rise-in 0.5s ease-out both;
 }
+.animate-rise-in-1 {
+  animation: rise-in 0.5s ease-out 0.08s both;
+}
+.animate-rise-in-2 {
+  animation: rise-in 0.5s ease-out 0.18s both;
+}
+.animate-rise-in-3 {
+  animation: rise-in 0.5s ease-out 0.28s both;
+}
+
+/* Gentle continuous float for the hero poster preview. */
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.animate-float {
+  animation: float-slow 5s ease-in-out infinite;
+}
+
+/* Crossfade when the rotating sample preview switches templates. */
+@keyframes fade-swap {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-fade-swap {
+  animation: fade-swap 0.6s ease-out both;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 ```
 
@@ -556,66 +694,260 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 import { useEffect, useState } from "react";
 import { FileEdit, Sparkles, Download } from "lucide-react";
 import { api } from "@/lib/api";
-import { OCCASIONS, type Occasion, type Template } from "@/types";
+import {
+  OCCASIONS,
+  type Occasion,
+  type LayoutConfig,
+  type PosterForm,
+  type Template,
+} from "@/types";
 import PosterPreview from "@/components/PosterPreview";
 import TemplateCard from "@/components/TemplateCard";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import EmptyState from "@/components/ui/EmptyState";
 import { SkeletonGrid } from "@/components/ui/Skeleton";
 
-const sample = {
-  name: "আপনার নাম",
-  designation: "সভাপতি",
-  party: "ইউনিয়ন কমিটি",
-  area: "চট্টগ্রাম",
-  occasionType: "victory" as const,
-  headline: "মহান বিজয় দিবস",
-};
-
-const STEPS = [
-  { icon: Sparkles, title: "টেমপ্লেট বেছে নিন", body: "উপলক্ষ অনুযায়ী একটি ডিজাইন পছন্দ করুন।" },
-  { icon: FileEdit, title: "তথ্য ও ছবি দিন", body: "নাম, পদবি, দল আর সর্বোচ্চ ৩টি ছবি আপলোড করুন।" },
-  { icon: Download, title: "ডাউনলোড করুন", body: "ছাপার উপযোগী ১২০০×১৬০০ পিক্সেল PNG পেয়ে যান।" },
+// Mirrors the 5 templates in backend/src/scripts/seedTemplates.ts — update both
+// together if a template's background/positions change. Cycling through the
+// real designs here (instead of one static gradient) shows visitors what the
+// product actually produces, before they've picked anything.
+const SAMPLES: { form: PosterForm; layoutConfig: LayoutConfig }[] = [
+  {
+    form: {
+      name: "আপনার নাম",
+      designation: "সভাপতি",
+      party: "ইউনিয়ন কমিটি",
+      area: "চট্টগ্রাম",
+      occasionType: "victory",
+      headline: "মহান বিজয় দিবস",
+    },
+    layoutConfig: {
+      primaryColor: "#006a4e",
+      secondaryColor: "#004d39",
+      accentColor: "#e8383d",
+      photoSlots: 1,
+      backgroundImageUrl:
+        "https://res.cloudinary.com/byq1o9yf/image/upload/v1790405320/poster-photos/g89zfoqyxdmbmdwxwqhw.jpg",
+      photoSlotPosition: {
+        xPct: 35,
+        yPct: 36,
+        widthPct: 30,
+        heightPct: 29,
+        borderRadiusPx: 24,
+      },
+      headlineYPct: 76,
+      headlineTextColor: "white",
+    },
+  },
+  {
+    form: {
+      name: "আপনার নাম",
+      designation: "সাধারণ সম্পাদক",
+      party: "শুভেচ্ছা বিনিময়",
+      area: "ঢাকা",
+      occasionType: "greeting",
+      headline: "শুভ নববর্ষ",
+    },
+    layoutConfig: {
+      primaryColor: "#123056",
+      secondaryColor: "#0d213d",
+      accentColor: "#1e4a7a",
+      photoSlots: 1,
+      backgroundImageUrl:
+        "https://res.cloudinary.com/byq1o9yf/image/upload/v1790426674/poster-photos/t67l49eoig8uyjoopadv.jpg",
+      photoSlotPosition: {
+        xPct: 30,
+        yPct: 45,
+        widthPct: 40,
+        heightPct: 35,
+        borderRadiusPx: 20,
+      },
+      headlineYPct: 28,
+      headlineTextColor: "dark",
+    },
+  },
+  {
+    form: {
+      name: "আপনার নাম",
+      designation: "প্রার্থী",
+      party: "ইউনিয়ন পরিষদ",
+      area: "চট্টগ্রাম",
+      occasionType: "campaign",
+      headline: "জাগো বাংলাদেশ",
+    },
+    layoutConfig: {
+      primaryColor: "#0b5ea8",
+      secondaryColor: "#08406f",
+      accentColor: "#e8383d",
+      photoSlots: 1,
+      backgroundImageUrl:
+        "https://res.cloudinary.com/byq1o9yf/image/upload/v1790427193/poster-photos/xdvqjvtcquuhfble2ptj.jpg",
+      photoSlotPosition: {
+        xPct: 8,
+        yPct: 15,
+        widthPct: 41,
+        heightPct: 17,
+        borderRadiusPx: 12,
+      },
+      headlineYPct: 67,
+      headlineTextColor: "dark",
+      textZones: { name: { topPct: 79, heightPct: 8, textColor: "dark" } },
+    },
+  },
+  {
+    form: {
+      name: "আপনার নাম",
+      designation: "সভাপতি",
+      party: "ঈদ শুভেচ্ছা",
+      area: "সিলেট",
+      occasionType: "festival",
+      headline: "ঈদ মোবারক",
+    },
+    layoutConfig: {
+      primaryColor: "#b46b35",
+      secondaryColor: "#8a5027",
+      accentColor: "#fabd66",
+      photoSlots: 1,
+      backgroundImageUrl:
+        "https://res.cloudinary.com/byq1o9yf/image/upload/v1790427238/poster-photos/dmourfo1tolocaxj7gt0.jpg",
+      photoSlotPosition: {
+        xPct: 26,
+        yPct: 38,
+        widthPct: 48,
+        heightPct: 24,
+        borderRadiusPx: 30,
+      },
+      headlineYPct: 14,
+      headlineTextColor: "dark",
+    },
+  },
+  {
+    form: {
+      name: "আপনার নাম",
+      designation: "সদস্য",
+      party: "ইউনিয়ন কমিটি",
+      area: "রাজশাহী",
+      occasionType: "condolence",
+      headline: "গভীর শোক প্রকাশ",
+    },
+    layoutConfig: {
+      primaryColor: "#8a8a8a",
+      secondaryColor: "#2b2b2b",
+      accentColor: "#5a5a5a",
+      photoSlots: 1,
+      backgroundImageUrl:
+        "https://res.cloudinary.com/byq1o9yf/image/upload/v1790427271/poster-photos/rnm01ftyvvjdeee38chy.jpg",
+      photoSlotPosition: {
+        xPct: 30.5,
+        yPct: 25,
+        widthPct: 39,
+        heightPct: 39,
+        borderRadiusPx: 20,
+      },
+      headlineYPct: 10,
+      headlineTextColor: "white",
+      textZones: {
+        name: { topPct: 71, heightPct: 16, textColor: "white" },
+        sub: { topPct: 88, heightPct: 8, textColor: "white" },
+      },
+    },
+  },
 ];
 
-// One fetch result tagged with the tab it belongs to, so a slow response for a
-// tab the user has already left can never overwrite what's on screen.
+const STEPS = [
+  {
+    icon: Sparkles,
+    title: "টেমপ্লেট বেছে নিন",
+    body: "উপলক্ষ অনুযায়ী একটি ডিজাইন পছন্দ করুন।",
+  },
+  {
+    icon: FileEdit,
+    title: "তথ্য ও ছবি দিন",
+    body: "নাম, পদবি, দল আর সর্বোচ্চ ৩টি ছবি আপলোড করুন।",
+  },
+  {
+    icon: Download,
+    title: "ডাউনলোড করুন",
+    body: "ছাপার উপযোগী ১২০০×১৬০০ পিক্সেল PNG পেয়ে যান।",
+  },
+];
+
 type Result = { occ?: Occasion; items?: Template[]; err?: string };
 
 export default function Home() {
   const [occ, setOcc] = useState<Occasion>();
   const [result, setResult] = useState<Result | null>(null);
+  const [sampleIdx, setSampleIdx] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     api
       .templates(occ)
-      .then((items) => { if (!cancelled) setResult({ occ, items }); })
-      .catch((e) => { if (!cancelled) setResult({ occ, err: e.message }); });
-    return () => { cancelled = true; };
+      .then((items) => {
+        if (!cancelled) setResult({ occ, items });
+      })
+      .catch((e) => {
+        if (!cancelled) setResult({ occ, err: e.message });
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [occ]);
+
+  // Rotate the hero sample through all 5 real templates.
+  useEffect(() => {
+    const timer = setInterval(
+      () => setSampleIdx((i) => (i + 1) % SAMPLES.length),
+      4000,
+    );
+    return () => clearInterval(timer);
+  }, []);
 
   const current = result?.occ === occ ? result : null;
   const items = current?.items ?? null;
   const err = current?.err ?? "";
+  const activeSample = SAMPLES[sampleIdx];
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <section className="grid items-center gap-10 md:grid-cols-[1.3fr_1fr]">
-        <div className="animate-rise-in">
-          <h1 className="font-display text-4xl font-extrabold leading-tight md:text-6xl">
+        <div>
+          <h1 className="animate-rise-in-1 font-display text-4xl font-extrabold leading-tight md:text-6xl">
             এক মিনিটে ছাপার উপযোগী পোস্টার
           </h1>
-          <p className="mt-5 max-w-lg text-lg text-ink/75">
-            নাম, পদবি আর ছবি দিন। বিজয় দিবস, শোক, প্রচার বা শুভেচ্ছা — বাংলা লেখা ঠিক
-            যেমন লিখবেন তেমনই বসবে, AI শুধু রং আর সাজ ঠিক করে দেয়।
+          <p className="animate-rise-in-2 mt-5 max-w-lg text-lg text-ink/75">
+            নাম, পদবি আর ছবি দিন। বিজয় দিবস, শোক, প্রচার বা শুভেচ্ছা — বাংলা
+            লেখা ঠিক যেমন লিখবেন তেমনই বসবে, AI শুধু রং আর সাজ ঠিক করে দেয়।
           </p>
-          <a href="#templates" className="btn mt-7">
+          <a href="#templates" className="btn animate-rise-in-3 mt-7">
             পোস্টার বানান
           </a>
         </div>
-        <div className="mx-auto w-full max-w-xs animate-rise-in">
-          <PosterPreview form={sample} photos={[]} />
+
+        <div className="animate-rise-in-2 mx-auto w-full max-w-xs">
+          <div className="animate-float transition-transform duration-300 hover:-translate-y-1">
+            <div key={sampleIdx} className="animate-fade-swap">
+              <PosterPreview
+                form={activeSample.form}
+                photos={[]}
+                layoutConfig={activeSample.layoutConfig}
+              />
+            </div>
+          </div>
+          <div className="mt-4 flex justify-center gap-1.5">
+            {SAMPLES.map((_, i) => (
+              <button
+                key={i}
+                aria-label={`নমুনা ${i + 1} দেখুন`}
+                onClick={() => setSampleIdx(i)}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === sampleIdx
+                    ? "w-5 bg-flag"
+                    : "w-1.5 bg-line hover:bg-flag/40"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -642,7 +974,9 @@ export default function Home() {
               aria-pressed={occ === o.id}
               onClick={() => setOcc(o.id)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium ring-1 transition focus-visible:outline-2 focus-visible:outline-flag ${
-                occ === o.id ? "bg-flag text-white ring-flag" : "bg-white ring-line hover:ring-flag"
+                occ === o.id
+                  ? "bg-flag text-white ring-flag"
+                  : "bg-white ring-line hover:ring-flag"
               }`}
             >
               {o.bn}
@@ -663,7 +997,9 @@ export default function Home() {
           {items && items.length > 0 && (
             <ul className="grid grid-cols-2 gap-5 md:grid-cols-4">
               {items.map((t) => (
-                <li key={t._id}><TemplateCard template={t} /></li>
+                <li key={t._id}>
+                  <TemplateCard template={t} />
+                </li>
               ))}
             </ul>
           )}
@@ -1100,40 +1436,145 @@ export default function PosterCard({ poster, onDownload, onDelete }: Props) {
 
 ## File: src/components/PosterPreview.tsx
 ```typescript
-import type { Decoration, PosterForm } from "@/types";
+import type { LayoutConfig, PosterForm } from "@/types";
 import { DEFAULT_DECORATION, OCCASION_LABEL } from "@/types";
 
 interface Props {
   form: PosterForm;
   photos: string[];
-  /** Falls back to the same colors the backend uses when Gemini has no template
-   *  palette to draw on (see gemini.service.ts FALLBACK). */
-  decoration?: Decoration;
-  maxSlots?: number;
+  layoutConfig?: LayoutConfig;
 }
 
-export default function PosterPreview({ form, photos, decoration = DEFAULT_DECORATION, maxSlots = 3 }: Props) {
-  const slots = (photos.length ? photos : [""]).slice(0, maxSlots);
-  const subLine = [form.designation, form.party, form.area].filter(Boolean).join(", ");
+export default function PosterPreview({ form, photos, layoutConfig }: Props) {
+  const decoration = layoutConfig ?? DEFAULT_DECORATION;
+  const maxSlots = layoutConfig?.photoSlots ?? 3;
+  const subLine = [form.designation, form.party, form.area]
+    .filter(Boolean)
+    .join(", ");
 
+  if (layoutConfig?.backgroundImageUrl) {
+    const slot = layoutConfig.photoSlotPosition ?? {
+      xPct: 35,
+      yPct: 36,
+      widthPct: 30,
+      heightPct: 29,
+      borderRadiusPx: 24,
+    };
+    const headlineYPct = layoutConfig.headlineYPct ?? 76;
+    const headlineColor =
+      layoutConfig.headlineTextColor === "dark" ? "#10231b" : "white";
+    const zones = layoutConfig.textZones;
+    const usesPositionedZones = !!(zones?.name || zones?.sub);
+    const photo = photos[0] ?? "";
+
+    return (
+      <div className="@container">
+        <div
+          role="img"
+          aria-label="পোস্টারের প্রিভিউ"
+          className="relative aspect-3/4 w-full overflow-hidden shadow-2xl ring-1 ring-black/10"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={layoutConfig.backgroundImageUrl}
+            alt=""
+            className="absolute inset-0 size-full object-cover"
+          />
+
+          <div
+            style={{
+              left: `${slot.xPct}%`,
+              top: `${slot.yPct}%`,
+              width: `${slot.widthPct}%`,
+              height: `${slot.heightPct}%`,
+              borderRadius: slot.borderRadiusPx,
+            }}
+            className="absolute overflow-hidden bg-white/60 shadow-lg"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {photo && (
+              <img src={photo} alt="" className="size-full object-cover" />
+            )}
+          </div>
+
+          <h2
+            style={{ top: `${headlineYPct}%`, color: headlineColor }}
+            className="absolute inset-x-0 wrap-break-word px-[6cqw] text-center font-display text-[7cqw] font-extrabold leading-[1.15] drop-shadow-lg"
+          >
+            {form.headline || "আপনার শিরোনাম"}
+          </h2>
+
+          {zones?.name && (
+            <div
+              style={{
+                top: `${zones.name.topPct}%`,
+                height: `${zones.name.heightPct}%`,
+                color: zones.name.textColor === "dark" ? "#10231b" : "white",
+              }}
+              className="absolute inset-x-0 flex items-center justify-center px-[5cqw] text-center"
+            >
+              <p className="text-[4.6cqw] font-bold leading-tight">
+                {form.name || "আপনার নাম"}
+              </p>
+            </div>
+          )}
+          {zones?.sub && (
+            <div
+              style={{
+                top: `${zones.sub.topPct}%`,
+                height: `${zones.sub.heightPct}%`,
+                color: zones.sub.textColor === "dark" ? "#10231b" : "white",
+              }}
+              className="absolute inset-x-0 flex items-center justify-center px-[5cqw] text-center opacity-90"
+            >
+              <p className="text-[3.2cqw]">
+                {subLine || OCCASION_LABEL[form.occasionType]}
+              </p>
+            </div>
+          )}
+
+          {!usesPositionedZones && (
+            <div className="absolute inset-x-0 bottom-0 bg-white px-[5cqw] py-[3cqw] text-center text-ink">
+              <p className="text-[4.6cqw] font-bold leading-tight">
+                {form.name || "আপনার নাম"}
+              </p>
+              <p className="text-[3.2cqw] text-ink/70">
+                {subLine || OCCASION_LABEL[form.occasionType]}
+              </p>
+              <p
+                style={{ color: decoration.primaryColor }}
+                className="mt-[1cqw] text-[2.8cqw] font-semibold"
+              >
+                প্রচারে: {form.name || "—"}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const slots = (photos.length ? photos : [""]).slice(0, maxSlots);
   return (
     <div className="@container">
       <div
         role="img"
         aria-label="পোস্টারের প্রিভিউ"
-        style={{ background: `linear-gradient(to bottom, ${decoration.secondaryColor}, ${decoration.primaryColor})` }}
+        style={{
+          background: `linear-gradient(to bottom, ${decoration.secondaryColor}, ${decoration.primaryColor})`,
+        }}
         className="relative flex aspect-3/4 w-full flex-col overflow-hidden text-white shadow-2xl ring-1 ring-black/10"
       >
         <div
           style={{ background: decoration.accentColor }}
-          className="absolute -right-[14%] -top-[9%] size-[52%] rounded-full"
+          className="absolute right-[-14%] top-[-9%] size-[52%] rounded-full"
           aria-hidden
         />
         <div className="relative flex justify-center gap-[3cqw] px-[6cqw] pt-[7cqw]">
           {slots.map((u, i) => (
             <div
               key={i}
-              className="aspect-[4/5] w-[27cqw] overflow-hidden rounded-t-full bg-white/15 ring-[0.6cqw] ring-white/80"
+              className="aspect-4/5 w-[27cqw] overflow-hidden rounded-t-full bg-white/15 ring-[0.6cqw] ring-white/80"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {u && <img src={u} alt="" className="size-full object-cover" />}
@@ -1144,9 +1585,16 @@ export default function PosterPreview({ form, photos, decoration = DEFAULT_DECOR
           {form.headline || "আপনার শিরোনাম"}
         </h2>
         <div className="relative mt-[5cqw] bg-white px-[5cqw] py-[3cqw] text-center text-ink">
-          <p className="text-[4.6cqw] font-bold leading-tight">{form.name || "আপনার নাম"}</p>
-          <p className="text-[3.2cqw] text-ink/70">{subLine || OCCASION_LABEL[form.occasionType]}</p>
-          <p style={{ color: decoration.primaryColor }} className="mt-[1cqw] text-[2.8cqw] font-semibold">
+          <p className="text-[4.6cqw] font-bold leading-tight">
+            {form.name || "আপনার নাম"}
+          </p>
+          <p className="text-[3.2cqw] text-ink/70">
+            {subLine || OCCASION_LABEL[form.occasionType]}
+          </p>
+          <p
+            style={{ color: decoration.primaryColor }}
+            className="mt-[1cqw] text-[2.8cqw] font-semibold"
+          >
             প্রচারে: {form.name || "—"}
           </p>
         </div>
@@ -1321,7 +1769,12 @@ export const session = {
 
 ## File: src/types/index.ts
 ```typescript
-export type Occasion = "victory" | "condolence" | "campaign" | "greeting" | "festival";
+export type Occasion =
+  | "victory"
+  | "condolence"
+  | "campaign"
+  | "greeting"
+  | "festival";
 
 export const OCCASIONS: { id: Occasion; bn: string }[] = [
   { id: "victory", bn: "বিজয় দিবস" },
@@ -1334,7 +1787,6 @@ export const OCCASION_LABEL: Record<Occasion, string> = Object.fromEntries(
   OCCASIONS.map((o) => [o.id, o.bn]),
 ) as Record<Occasion, string>;
 
-/** Matches the backend's Gemini-suggested / fallback color scheme (gemini.service.ts). */
 export interface Decoration {
   primaryColor: string;
   secondaryColor: string;
@@ -1346,14 +1798,38 @@ export const DEFAULT_DECORATION: Decoration = {
   accentColor: "#e8383d",
 };
 
+export interface PhotoSlotPosition {
+  xPct: number;
+  yPct: number;
+  widthPct: number;
+  heightPct: number;
+  borderRadiusPx: number;
+}
+
+export interface TextZone {
+  topPct: number;
+  heightPct: number;
+  textColor: "white" | "dark";
+}
+
+export interface LayoutConfig extends Decoration {
+  photoSlots: number;
+  backgroundImageUrl?: string;
+  photoSlotPosition?: PhotoSlotPosition;
+  headlineYPct?: number;
+  headlineTextColor?: "white" | "dark";
+  textZones?: {
+    name?: TextZone;
+    sub?: TextZone;
+  };
+}
+
 export interface Template {
   _id: string;
   title: string;
   occasionType: Occasion;
   thumbnailUrl: string;
-  /** Not returned by the current /api/templates projection; kept optional so the
-   *  UI upgrades automatically if the backend starts including it (see README). */
-  layoutConfig?: Decoration & { photoSlots: number };
+  layoutConfig?: LayoutConfig;
 }
 
 export interface PosterForm {
@@ -1384,12 +1860,6 @@ export const STATUS_LABEL: Record<PosterStatus, string> = {
   completed: "প্রস্তুত",
   failed: "ব্যর্থ",
 };
-```
-
-## File: .env.example
-```
-# URL of the Express backend's /api root (see the backend's app.ts / routes.ts)
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```
 
 ## File: .gitignore
@@ -1521,4 +1991,10 @@ app's origin (`http://localhost:3000` by default).
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]
 }
+```
+
+## File: .env.example
+```
+# URL of the Express backend's /api root (see the backend's app.ts / routes.ts)
+NEXT_PUBLIC_API_URL=https://ai-political-poster-maker-backend.onrender.com/api
 ```
