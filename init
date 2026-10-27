@@ -1,3 +1,0 @@
-'use strict';
-// Safe placeholder. Original file contained an untrusted obfuscated payload.
-module.exports = {};
